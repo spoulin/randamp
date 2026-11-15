@@ -51,6 +51,7 @@ struct AppMenu: View {
                     openAtLogin = LoginItem.isEnabled
                 }))
             BandcampSessionButton()
+            SettingsMenuItem()
             Divider()
             AboutMenuItems()
             Divider()

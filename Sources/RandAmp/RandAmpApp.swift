@@ -43,6 +43,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             add("Favorites", checked: player.favoritesOnly) { player.favoritesOnly.toggle() }
             add("Fans Mix", checked: player.fansMix) { player.fansMix.toggle() }
             add("New Releases", checked: player.newReleases) { player.setNewReleases(!player.newReleases) }
+            menu.addItem(.separator())
+            add("Settings…") { SettingsWindow.show() }
             return menu
         }
     }
@@ -182,6 +184,10 @@ struct RandAmpCommands: Commands {
     var body: some Commands {
         CommandGroup(after: .appInfo) {
             Button("Check for Updates…") { NSWorkspace.shared.open(AppInfo.releasesPage) }
+        }
+        CommandGroup(replacing: .appSettings) {
+            Button("Settings…") { SettingsWindow.show() }
+                .keyboardShortcut(",", modifiers: .command)
         }
         CommandMenu("Playback") {
             Button(player.isPlaying ? "Pause" : "Play") { player.toggle() }

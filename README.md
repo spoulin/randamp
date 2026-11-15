@@ -21,6 +21,7 @@ RandAmp was called Dérive until version 1.0.
 - Thumbs down: skip a track and never hear it again
 - History of the tracks played, and an option to avoid repeats
 - Media keys and Control Center's Now Playing
+- The cover playing as the app icon in the Dock (Settings)
 - Your own list of Bandcamp artists and labels, each one turned on or off
 - Link your Bandcamp profile to play the artists and labels you follow, kept in sync
 - Sign in to Bandcamp: your profile links by itself, artists' messages show in Community, and
@@ -415,12 +416,24 @@ leaves the Dock; the music goes on, and the menu bar icon stays.
 
 - Click the Dock icon to bring the window back.
 - Right-click it for the controls: Play/Pause, Next Track, New Random Album, Thumbs Up, Thumbs
-  Down, Radio, Favorites, Fans Mix, New Releases.
-- The **RandAmp** menu has Check for Updates. The **Playback** menu has the same controls, with
-  shortcuts: ⌥⌘P play/pause, ⌘→ next track, ⌘R new random album, ⌘↑ thumbs up, ⌘↓ thumbs
-  down, ⌥⌘S side panel.
+  Down, Radio, Favorites, Fans Mix, New Releases, and Settings.
+- The **RandAmp** menu has Settings (⌘,) and Check for Updates. The **Playback** menu has the same
+  controls, with shortcuts: ⌥⌘P play/pause, ⌘→ next track, ⌘R new random album, ⌘↑ thumbs up,
+  ⌘↓ thumbs down, ⌥⌘S side panel.
 
-To keep RandAmp in the menu bar only, turn off **Show in Dock While Open** in a "…" menu.
+To keep RandAmp in the menu bar only, turn off **Show in Dock While Open** in a "…" menu or in
+Settings.
+
+## Settings
+
+Open **Settings…** with ⌘, while the player window is open, from a right-click on the Dock icon,
+or from a "…" menu (in the menu bar window, or in the Artists tab of the side panel).
+
+- **Show the cover of the album playing as the app icon**: in the Dock and ⌘-Tab, RandAmp's icon
+  becomes the cover playing, as a rounded icon. RandAmp's own icon comes back when nothing plays,
+  when the setting is off, and after quitting. Off by default.
+- **Show in the Dock while the player window is open**: the same as in the "…" menus. On by default.
+- **Open at login**: the same as in the menu bar window's "…" menu.
 
 A short message at the bottom of the player says what an action just did: favorites or radio on
 or off, on top or not, thumbs up or down. It fades out after a few seconds.

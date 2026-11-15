@@ -703,6 +703,7 @@ final class Player: ObservableObject {
         cover = image
         tint = image.map(CoverColor.tint) ?? CoverColor.neutral
         coverID += 1
+        AppIcon.apply()
     }
 }
 

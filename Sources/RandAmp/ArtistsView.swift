@@ -365,6 +365,7 @@ struct ArtistsView: View {
                 Button("Unlink…") { confirmUnlink = true }
             }
             Divider()
+            SettingsMenuItem()
             AboutMenuItems()
         } label: {
             Image(systemName: "ellipsis.circle")

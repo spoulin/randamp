@@ -464,10 +464,17 @@ enum PlayerWindow {
         let policy: NSApplication.ActivationPolicy = open && showsInDock ? .regular : .accessory
         guard NSApp.activationPolicy() != policy else { return }
         NSApp.setActivationPolicy(policy)
+        AppIcon.apply() // The Dock tile starts from the bundle's icon.
         if policy == .regular {
-            // Switching makes the app lose focus: bring the window back to the front.
-            NSApp.activate(ignoringOtherApps: true)
-            window?.makeKeyAndOrderFront(nil)
+            // Switching makes the app lose focus, and macOS keeps the previous app's menus at the
+            // top of the screen until RandAmp is activated again. So the Dock is activated for a
+            // moment, then RandAmp with its window in front: its menus (and ⌘,) show.
+            NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.dock").first?
+                .activate(options: [])
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                NSApp.activate(ignoringOtherApps: true)
+                window?.makeKeyAndOrderFront(nil)
+            }
         }
     }
 
