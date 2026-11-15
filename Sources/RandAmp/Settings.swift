@@ -34,6 +34,7 @@ struct SettingsMenuItem: View {
 struct SettingsView: View {
     @AppStorage(AppIcon.key) private var coverAsIcon = false
     @AppStorage(PlayerWindow.dockKey) private var showsInDock = true
+    @AppStorage(ArtistsView.autoCycleKey) private var autoCycle = true
     @State private var openAtLogin = LoginItem.isEnabled
     @State private var loginMessage: String?
 
@@ -43,6 +44,12 @@ struct SettingsView: View {
                 Toggle("Show the cover of the album playing as the app icon", isOn: $coverAsIcon)
                     .onChange(of: coverAsIcon) { _ in AppIcon.apply() }
                 Text("In the Dock and in ⌘-Tab, while RandAmp is there. The usual icon comes back when nothing plays.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Section("Side panel") {
+                Toggle("Go through the tabs of the album playing", isOn: $autoCycle)
+                Text("At each new track: the artist, then Community after 30 seconds, then Merch 30 seconds later. Off, the panel stays on the tab you open.")
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

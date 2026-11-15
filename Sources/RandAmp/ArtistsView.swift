@@ -31,6 +31,9 @@ struct ArtistsView: View {
     @ObservedObject var newReleases = NewReleaseStore.shared
     /// The tab cycle of a new track, while it runs.
     @State private var tabCycle: Task<Void, Never>?
+    /// Settings › "Go through the tabs of the album playing": on by default.
+    @AppStorage(ArtistsView.autoCycleKey) private var autoCycle = true
+    static let autoCycleKey = "panelAutoCycle"
 
     private var followedCount: Int { store.artists.filter(\.isFollowed).count }
     private var manualCount: Int { store.artists.count - followedCount }
@@ -74,6 +77,9 @@ struct ArtistsView: View {
             if let page = player.pageURL { await info.load(page) }
         }
         .onChange(of: player.nowPlaying) { _ in startTabCycle() }
+        .onChange(of: autoCycle) { on in
+            if !on { tabCycle?.cancel(); tabCycle = nil }
+        }
         // A right tab of the other section: open this section's first tab instead.
         .onChange(of: section) { _ in fitTabToSection() }
         .onAppear { fitTabToSection() }
@@ -158,11 +164,11 @@ struct ArtistsView: View {
     /// At each new track, while a tab of the album playing is open: the (i) tab, then Community,
     /// then Merch, 30 seconds apart. A tab with nothing to show is skipped: no posts, or no merch
     /// still available. Opening a tab yourself stops it. Your library tabs (artists, thumbs
-    /// down) are never left this way.
+    /// down) are never left this way. Off in Settings, the panel stays on the tab you chose.
     private func startTabCycle() {
         tabCycle?.cancel()
         tabCycle = nil
-        guard player.nowPlaying != nil, [.artist, .community, .merch].contains(tab) else { return }
+        guard autoCycle, player.nowPlaying != nil, [.artist, .community, .merch].contains(tab) else { return }
         if tab != .artist { withAnimation(.easeInOut(duration: 0.8)) { tab = .artist } }
         tabCycle = Task { @MainActor in
             var remaining: [Tab] = [.community, .merch]
