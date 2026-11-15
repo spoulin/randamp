@@ -59,6 +59,7 @@ struct MerchView: View {
                 }
             }
             .padding(.vertical, 4)
+            .panelScrollable(.merch)
         }
         .scrollIndicators(.never)
     }

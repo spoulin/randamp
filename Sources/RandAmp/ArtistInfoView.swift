@@ -37,6 +37,7 @@ struct ArtistInfoView: View {
                 release(info, page: page)
             }
             .padding(.vertical, 4)
+            .panelScrollable(.artist)
         }
         .scrollIndicators(.never)
     }

@@ -63,6 +63,7 @@ struct CommunityView: View {
                 }
             }
             .padding(.vertical, 4)
+            .panelScrollable(.community)
         }
         .scrollIndicators(.never)
     }

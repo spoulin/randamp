@@ -1,0 +1,92 @@
+import AppKit
+import SwiftUI
+
+/// Settings › "Scroll each tab slowly to the bottom": while the side panel goes through the tabs of
+/// the album playing, each tab scrolls down by itself. The tabs' SwiftUI scroll views are AppKit
+/// scroll views underneath; a marker in their content finds them.
+@MainActor
+enum PanelScroll {
+    static let key = "panelAutoScroll"
+    /// Slow enough to read along.
+    static let pointsPerSecond: CGFloat = 30
+
+    private final class Weak {
+        weak var view: NSScrollView?
+        init(_ view: NSScrollView?) { self.view = view }
+    }
+    private static var views: [ArtistsView.Tab: Weak] = [:]
+
+    static func register(_ tab: ArtistsView.Tab, _ view: NSScrollView?) { views[tab] = Weak(view) }
+
+    /// Scrolls the tab down slowly. Returns at the bottom (once the content stops growing), when
+    /// the task is cancelled, or as soon as you scroll it yourself.
+    static func scrollToBottom(_ tab: ArtistsView.Tab) async {
+        let frame: UInt64 = 16_666_667 // A 60th of a second.
+        var expected: CGFloat?
+        var atBottomSince: Date?
+        var waited = 0
+        while !Task.isCancelled {
+            guard let scrollView = views[tab]?.view, scrollView.window != nil,
+                  let document = scrollView.documentView else {
+                // The tab may still be loading: give it 3 seconds.
+                waited += 1
+                if waited > 180 { return }
+                try? await Task.sleep(nanoseconds: frame)
+                continue
+            }
+            let clip = scrollView.contentView
+            let current = clip.bounds.origin
+            // Moved by something else than this loop: you scrolled. Leave it there.
+            if let expected, abs(current.y - expected) > 2 { return }
+            let step = pointsPerSecond / 60 * (document.isFlipped ? 1 : -1)
+            let target = clip.constrainBoundsRect(NSRect(origin: NSPoint(x: current.x, y: current.y + step),
+                                                         size: clip.bounds.size)).origin
+            if abs(target.y - current.y) < 0.01 {
+                // At the bottom. A picture or a list that loads can still make it longer.
+                let since = atBottomSince ?? Date()
+                atBottomSince = since
+                if Date().timeIntervalSince(since) > 0.6 { return }
+                expected = current.y
+            } else {
+                atBottomSince = nil
+                clip.scroll(to: target)
+                scrollView.reflectScrolledClipView(clip)
+                expected = target.y
+            }
+            try? await Task.sleep(nanoseconds: frame)
+        }
+    }
+}
+
+extension View {
+    /// Marks the content of a panel tab's ScrollView, so the tab cycle can scroll it.
+    func panelScrollable(_ tab: ArtistsView.Tab) -> some View {
+        background(PanelScrollMarker(tab: tab))
+    }
+}
+
+private struct PanelScrollMarker: NSViewRepresentable {
+    let tab: ArtistsView.Tab
+
+    func makeNSView(context: Context) -> NSView { Marker(tab: tab) }
+    func updateNSView(_ view: NSView, context: Context) {}
+
+    final class Marker: NSView {
+        let tab: ArtistsView.Tab
+        init(tab: ArtistsView.Tab) {
+            self.tab = tab
+            super.init(frame: .zero)
+        }
+        required init?(coder: NSCoder) { nil }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard window != nil else { return }
+            // The scroll view is set up around the content right after.
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                PanelScroll.register(self.tab, self.enclosingScrollView)
+            }
+        }
+    }
+}

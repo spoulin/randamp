@@ -33,6 +33,8 @@ struct ArtistsView: View {
     @State private var tabCycle: Task<Void, Never>?
     /// Settings › "Go through the tabs of the album playing": on by default.
     @AppStorage(ArtistsView.autoCycleKey) private var autoCycle = true
+    /// Settings › "Scroll each tab slowly to the bottom": off by default.
+    @AppStorage(PanelScroll.key) private var autoScroll = false
     static let autoCycleKey = "panelAutoCycle"
 
     private var followedCount: Int { store.artists.filter(\.isFollowed).count }
@@ -171,19 +173,37 @@ struct ArtistsView: View {
         guard autoCycle, player.nowPlaying != nil, [.artist, .community, .merch].contains(tab) else { return }
         if tab != .artist { withAnimation(.easeInOut(duration: 0.8)) { tab = .artist } }
         tabCycle = Task { @MainActor in
+            var current: Tab = .artist
             var remaining: [Tab] = [.community, .merch]
-            while !remaining.isEmpty {
-                try? await Task.sleep(nanoseconds: 30_000_000_000)
+            while true {
+                await dwell(on: current)
                 var next: Tab?
                 while next == nil, !remaining.isEmpty {
+                    guard !Task.isCancelled else { return }
                     let candidate = remaining.removeFirst()
                     if await hasContent(candidate) { next = candidate }
-                    guard !Task.isCancelled else { return }
                 }
-                guard let next else { return }
+                guard let next, !Task.isCancelled else { return }
                 withAnimation(.easeInOut(duration: 0.8)) { tab = next }
+                current = next
             }
         }
+    }
+
+    /// The time a tab stays in the cycle: 30 seconds. With "Scroll each tab slowly to the bottom",
+    /// it scrolls down 1 second after it opens; a tab too long for 30 seconds stays until the
+    /// bottom, then 1 second more.
+    private func dwell(on tab: Tab) async {
+        let start = Date()
+        var minimumAfter: Double = 0
+        if autoScroll {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            guard !Task.isCancelled else { return }
+            await PanelScroll.scrollToBottom(tab)
+            minimumAfter = 1
+        }
+        let left = max(30 - Date().timeIntervalSince(start), minimumAfter)
+        try? await Task.sleep(nanoseconds: UInt64(left * 1_000_000_000))
     }
 
     /// Whether a tab of the album playing has something to show, waiting up to 10 seconds for it

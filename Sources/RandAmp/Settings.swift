@@ -35,6 +35,7 @@ struct SettingsView: View {
     @AppStorage(AppIcon.key) private var coverAsIcon = false
     @AppStorage(PlayerWindow.dockKey) private var showsInDock = true
     @AppStorage(ArtistsView.autoCycleKey) private var autoCycle = true
+    @AppStorage(PanelScroll.key) private var autoScroll = false
     @State private var openAtLogin = LoginItem.isEnabled
     @State private var loginMessage: String?
 
@@ -50,6 +51,11 @@ struct SettingsView: View {
             Section("Side panel") {
                 Toggle("Go through the tabs of the album playing", isOn: $autoCycle)
                 Text("At each new track: the artist, then Community after 30 seconds, then Merch 30 seconds later. Off, the panel stays on the tab you open.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Toggle("Scroll each tab slowly to the bottom", isOn: $autoScroll)
+                    .disabled(!autoCycle)
+                Text("1 second after a tab opens. A tab too long for 30 seconds stays until the bottom, then 1 second more. Scrolling it yourself stops it.")
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
