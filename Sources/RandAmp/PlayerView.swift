@@ -53,7 +53,7 @@ struct PlayerWindowContent: View {
                         .controlSize(.small)
                         .fixedSize()
                         .help("Play from your library, or from the latest releases on Bandcamp")
-                        .padding(.top, 4)
+                        .padding(.top, 8)
                         .padding(.trailing, 14)
                         .ignoresSafeArea(edges: .top)
                     }
