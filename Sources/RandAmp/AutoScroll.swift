@@ -18,7 +18,28 @@ enum PanelScroll {
     }
     private static var views: [ArtistsView.Tab: Weak] = [:]
 
-    static func register(_ tab: ArtistsView.Tab, _ view: NSScrollView?) { views[tab] = Weak(view) }
+    /// Posted when you scroll or click in a tab of the album playing, which stops the tab cycle.
+    static let userActed = Notification.Name("PanelScroll.userActed")
+    private static var monitor: Any?
+
+    static func register(_ tab: ArtistsView.Tab, _ view: NSScrollView?) {
+        views[tab] = Weak(view)
+        guard monitor == nil else { return }
+        // The scrolling of this loop makes no events: these are yours.
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel, .leftMouseDown]) { event in
+            MainActor.assumeIsolated { noteUserAction(event) }
+            return event
+        }
+    }
+
+    private static func noteUserAction(_ event: NSEvent) {
+        guard let window = event.window else { return }
+        let inTab = views.values.contains { entry in
+            guard let view = entry.view, view.window === window else { return false }
+            return view.bounds.contains(view.convert(event.locationInWindow, from: nil))
+        }
+        if inTab { NotificationCenter.default.post(name: userActed, object: nil) }
+    }
 
     /// Scrolls the tab down slowly, 1.5 seconds after its content shows. Returns at the bottom (once
     /// the content stops growing), when the task is cancelled, or as soon as you scroll it yourself.

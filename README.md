@@ -212,10 +212,10 @@ On the left, the album playing. These tabs change with every album:
 Their numbers show without opening them, as soon as the album starts.
 
 At each new track, while one of these tabs is open, the panel goes through them by itself,
-fading from one to the next: the (i) tab first, then Community after 30 seconds, then Merch 30
-seconds later. On a short track, the next track starts the cycle again. A tab with nothing to
-show is skipped: no community page or posts, or no merch still available. Click a tab to stop
-this until the next track. While one of your library tabs is open, the panel stays on it. To
+fading from one to the next: the (i) tab first, then Community, then Merch, 30 seconds each, then
+the (i) tab again, round and round. The next track starts the cycle again from the (i) tab. A tab
+with nothing to show is skipped: no community page or posts, or no merch still available. Click a
+tab, or scroll or click in one, to stop this until the next track. While one of your library tabs is open, the panel stays on it. To
 stop it for good, turn off **Go through the tabs of the album playing** in [Settings](#settings).
 
 On the right, your library, when **Library** is chosen at the top right of the panel (**New
@@ -434,12 +434,11 @@ or from a "…" menu (in the menu bar window, or in the Artists tab of the side 
   becomes the cover playing, as a rounded icon. RandAmp's own icon comes back when nothing plays,
   when the setting is off, and after quitting. Off by default.
 - **Go through the tabs of the album playing**: at each new track, the side panel shows the
-  artist, then Community, then Merch, 30 seconds apart (see [Panel tabs](#panel-tabs)). Off, it stays
-  on the tab you open. On by default.
+  artist, then Community, then Merch, 30 seconds each, round and round, until you scroll or click
+  in a tab (see [Panel tabs](#panel-tabs)). Off, it stays on the tab you open. On by default.
 - **Scroll each tab slowly to the bottom**, available while the setting above is on: 1.5 seconds
   after a tab shows its content, it scrolls down slowly. A tab too long for 30 seconds stays until
-  the bottom, then 1 second more, before the next one. Scrolling it yourself stops it. Off by
-  default.
+  the bottom, then 1 second more, before the next one. Off by default.
 - **Show in the Dock while the player window is open**: the same as in the "…" menus. On by default.
 - **Open at login**: the same as in the menu bar window's "…" menu.
 

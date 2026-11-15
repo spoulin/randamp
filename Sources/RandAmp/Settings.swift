@@ -50,12 +50,12 @@ struct SettingsView: View {
             }
             Section("Side panel") {
                 Toggle("Go through the tabs of the album playing", isOn: $autoCycle)
-                Text("At each new track: the artist, then Community after 30 seconds, then Merch 30 seconds later. Off, the panel stays on the tab you open.")
+                Text("At each new track: the artist, then Community, then Merch, 30 seconds each, then the artist again, round and round. Scrolling or clicking in a tab, or opening one yourself, stops it until the next track. Off, the panel stays on the tab you open.")
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Toggle("Scroll each tab slowly to the bottom", isOn: $autoScroll)
                     .disabled(!autoCycle)
-                Text("1.5 seconds after a tab shows. A tab too long for 30 seconds stays until the bottom, then 1 second more. Scrolling it yourself stops it.")
+                Text("1.5 seconds after a tab shows. A tab too long for 30 seconds stays until the bottom, then 1 second more.")
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

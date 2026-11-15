@@ -80,8 +80,10 @@ struct ArtistsView: View {
         }
         .onChange(of: player.nowPlaying) { _ in startTabCycle() }
         .onChange(of: autoCycle) { on in
-            if !on { tabCycle?.cancel(); tabCycle = nil }
+            if !on { stopTabCycle() }
         }
+        // Scrolling or clicking in a tab: you're reading it, so it stays.
+        .onReceive(NotificationCenter.default.publisher(for: PanelScroll.userActed)) { _ in stopTabCycle() }
         // A right tab of the other section: open this section's first tab instead.
         .onChange(of: section) { _ in fitTabToSection() }
         .onAppear { fitTabToSection() }
@@ -164,30 +166,38 @@ struct ArtistsView: View {
     }
 
     /// At each new track, while a tab of the album playing is open: the (i) tab, then Community,
-    /// then Merch, 30 seconds apart. A tab with nothing to show is skipped: no posts, or no merch
-    /// still available. Opening a tab yourself stops it. Your library tabs (artists, thumbs
-    /// down) are never left this way. Off in Settings, the panel stays on the tab you chose.
+    /// then Merch, 30 seconds each, then the (i) tab again, round and round. A tab with nothing to
+    /// show is skipped: no posts, or no merch still available. Opening a tab yourself, or
+    /// scrolling or clicking in one, stops it until the next track. Your library tabs (artists,
+    /// thumbs down) are never left this way. Off in Settings, the panel stays on the tab you chose.
     private func startTabCycle() {
         tabCycle?.cancel()
         tabCycle = nil
-        guard autoCycle, player.nowPlaying != nil, [.artist, .community, .merch].contains(tab) else { return }
+        let order: [Tab] = [.artist, .community, .merch]
+        guard autoCycle, player.nowPlaying != nil, order.contains(tab) else { return }
         if tab != .artist { withAnimation(.easeInOut(duration: 0.8)) { tab = .artist } }
         tabCycle = Task { @MainActor in
             var current: Tab = .artist
-            var remaining: [Tab] = [.community, .merch]
             while true {
                 await dwell(on: current)
-                var next: Tab?
-                while next == nil, !remaining.isEmpty {
+                // The next tab with something to show; after Merch, the (i) tab again, which
+                // always has something.
+                var next: Tab = .artist
+                let index = order.firstIndex(of: current) ?? 0
+                for candidate in order[(index + 1)...] {
                     guard !Task.isCancelled else { return }
-                    let candidate = remaining.removeFirst()
-                    if await hasContent(candidate) { next = candidate }
+                    if await hasContent(candidate) { next = candidate; break }
                 }
-                guard let next, !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.8)) { tab = next }
+                guard !Task.isCancelled else { return }
+                if next != tab { withAnimation(.easeInOut(duration: 0.8)) { tab = next } }
                 current = next
             }
         }
+    }
+
+    private func stopTabCycle() {
+        tabCycle?.cancel()
+        tabCycle = nil
     }
 
     /// The time a tab stays in the cycle: 30 seconds. With "Scroll each tab slowly to the bottom",
@@ -274,8 +284,7 @@ struct ArtistsView: View {
         }
         return Button {
             // Choosing a tab yourself stops the cycle of the track playing.
-            tabCycle?.cancel()
-            tabCycle = nil
+            stopTabCycle()
             tab = value
         } label: {
             HStack(spacing: style == .full ? 4 : 3) {
