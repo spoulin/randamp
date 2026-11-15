@@ -436,9 +436,10 @@ or from a "…" menu (in the menu bar window, or in the Artists tab of the side 
 - **Go through the tabs of the album playing**: at each new track, the side panel shows the
   artist, then Community, then Merch, 30 seconds apart (see [Panel tabs](#panel-tabs)). Off, it stays
   on the tab you open. On by default.
-- **Scroll each tab slowly to the bottom**, available while the setting above is on: 1 second after
-  a tab opens, it scrolls down slowly. A tab too long for 30 seconds stays until the bottom, then 1
-  second more, before the next one. Scrolling it yourself stops it. Off by default.
+- **Scroll each tab slowly to the bottom**, available while the setting above is on: 1.5 seconds
+  after a tab shows its content, it scrolls down slowly. A tab too long for 30 seconds stays until
+  the bottom, then 1 second more, before the next one. Scrolling it yourself stops it. Off by
+  default.
 - **Show in the Dock while the player window is open**: the same as in the "…" menus. On by default.
 - **Open at login**: the same as in the menu bar window's "…" menu.
 

@@ -55,7 +55,7 @@ struct SettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Toggle("Scroll each tab slowly to the bottom", isOn: $autoScroll)
                     .disabled(!autoCycle)
-                Text("1 second after a tab opens. A tab too long for 30 seconds stays until the bottom, then 1 second more. Scrolling it yourself stops it.")
+                Text("1.5 seconds after a tab shows. A tab too long for 30 seconds stays until the bottom, then 1 second more. Scrolling it yourself stops it.")
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

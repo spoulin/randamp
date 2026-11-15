@@ -191,14 +191,12 @@ struct ArtistsView: View {
     }
 
     /// The time a tab stays in the cycle: 30 seconds. With "Scroll each tab slowly to the bottom",
-    /// it scrolls down 1 second after it opens; a tab too long for 30 seconds stays until the
-    /// bottom, then 1 second more.
+    /// it scrolls down 1.5 seconds after its content shows; a tab too long for 30 seconds stays
+    /// until the bottom, then 1 second more.
     private func dwell(on tab: Tab) async {
         let start = Date()
         var minimumAfter: Double = 0
         if autoScroll {
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            guard !Task.isCancelled else { return }
             await PanelScroll.scrollToBottom(tab)
             minimumAfter = 1
         }

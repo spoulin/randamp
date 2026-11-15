@@ -9,6 +9,8 @@ enum PanelScroll {
     static let key = "panelAutoScroll"
     /// Slow enough to read along.
     static let pointsPerSecond: CGFloat = 30
+    /// The time to look at the top of a tab before it starts moving, from when its content shows.
+    static let pause: Double = 1.5
 
     private final class Weak {
         weak var view: NSScrollView?
@@ -18,21 +20,27 @@ enum PanelScroll {
 
     static func register(_ tab: ArtistsView.Tab, _ view: NSScrollView?) { views[tab] = Weak(view) }
 
-    /// Scrolls the tab down slowly. Returns at the bottom (once the content stops growing), when
-    /// the task is cancelled, or as soon as you scroll it yourself.
+    /// Scrolls the tab down slowly, 1.5 seconds after its content shows. Returns at the bottom (once
+    /// the content stops growing), when the task is cancelled, or as soon as you scroll it yourself.
     static func scrollToBottom(_ tab: ArtistsView.Tab) async {
         let frame: UInt64 = 16_666_667 // A 60th of a second.
         var expected: CGFloat?
         var atBottomSince: Date?
         var waited = 0
+        var paused = false
         while !Task.isCancelled {
             guard let scrollView = views[tab]?.view, scrollView.window != nil,
                   let document = scrollView.documentView else {
-                // The tab may still be loading: give it 3 seconds.
+                // The tab may still be loading: give it 10 seconds.
                 waited += 1
-                if waited > 180 { return }
+                if waited > 600 { return }
                 try? await Task.sleep(nanoseconds: frame)
                 continue
+            }
+            if !paused {
+                paused = true
+                try? await Task.sleep(nanoseconds: UInt64(pause * 1_000_000_000))
+                continue // The content may have been replaced meanwhile: find it again.
             }
             let clip = scrollView.contentView
             let current = clip.bounds.origin
