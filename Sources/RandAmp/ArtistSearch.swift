@@ -20,8 +20,31 @@ struct FoundArtist: Identifiable, Equatable {
 
 /// Searches Bandcamp's artists and labels by name, with the endpoint of Bandcamp's own search box
 /// (its suggestions as you type). It isn't a documented API, so Bandcamp may change it.
+/// Gentle with Bandcamp: the view waits for a pause in the typing, a search already made comes
+/// from memory, and two requests are at least `gap` seconds apart.
+@MainActor
 enum ArtistSearch {
+    static let gap: TimeInterval = 1.5
+    private static var lastRequest = Date.distantPast
+    private static var cache: [String: [FoundArtist]] = [:]
+    private static var cacheOrder: [String] = []
+
     static func search(_ text: String) async throws -> [FoundArtist] {
+        let key = text.lowercased()
+        if let known = cache[key] { return known }
+        let wait = gap - Date().timeIntervalSince(lastRequest)
+        if wait > 0 {
+            try await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) // Throws when cancelled.
+        }
+        lastRequest = Date()
+        let results = try await request(text)
+        cache[key] = results
+        cacheOrder.append(key)
+        if cacheOrder.count > 50 { cache[cacheOrder.removeFirst()] = nil }
+        return results
+    }
+
+    private static func request(_ text: String) async throws -> [FoundArtist] {
         var request = URLRequest(url: URL(string: "https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

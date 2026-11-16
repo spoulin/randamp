@@ -374,7 +374,8 @@ struct ArtistsView: View {
             searchError = nil
             return
         }
-        try? await Task.sleep(nanoseconds: 400_000_000)
+        // Waits for a pause in the typing: each new letter cancels this and starts again.
+        try? await Task.sleep(nanoseconds: 600_000_000)
         guard !Task.isCancelled else { return }
         searching = true
         defer { searching = false }
