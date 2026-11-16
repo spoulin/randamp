@@ -10,11 +10,15 @@ enum SettingsWindow {
     static func show() {
         if window == nil {
             let host = NSHostingController(rootView: SettingsView())
-            host.sizingOptions = [.preferredContentSize]
+            // Sized once, from the content. Letting SwiftUI resize the window as it lays out
+            // (sizingOptions .preferredContentSize) crashed RandAmp on macOS 26: AppKit throws
+            // when a window asks for a new layout pass in the middle of one.
+            host.sizingOptions = []
             let created = NSWindow(contentViewController: host)
             created.title = "RandAmp Settings"
             created.styleMask = [.titled, .closable]
             created.isReleasedWhenClosed = false
+            created.setContentSize(host.view.fittingSize)
             created.center()
             created.setFrameAutosaveName("SettingsWindow")
             window = created
