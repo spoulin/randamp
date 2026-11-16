@@ -8,7 +8,7 @@ import SwiftUI
 enum PanelScroll {
     static let key = "panelAutoScroll"
     /// Slow enough to read along.
-    static let pointsPerSecond: CGFloat = 30
+    static let pointsPerSecond: CGFloat = 20
     /// The time to look at the top of a tab before it starts moving, from when its content shows.
     static let pause: Double = 1.5
 
