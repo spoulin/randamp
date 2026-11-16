@@ -90,7 +90,15 @@ final class ArtistStore: ObservableObject {
         for band in bands where !known.contains(band.bandID) && !hosts.contains(band.url.host ?? "") {
             updated.append(Artist(url: band.url, name: band.name, bandID: band.bandID))
         }
+        updated = Self.inOrder(updated)
         if updated != artists { artists = updated }
+    }
+
+    /// The artists added by hand in the order you added them, then the followed ones from A to Z,
+    /// so a new follow takes its place in the list instead of going to the bottom.
+    private static func inOrder(_ list: [Artist]) -> [Artist] {
+        list.filter { !$0.isFollowed }
+            + list.filter(\.isFollowed).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     var enabled: [Artist] { artists.filter(\.enabled) }
@@ -112,6 +120,7 @@ final class ArtistStore: ObservableObject {
         } else {
             artists.removeAll { $0.isFollowed && ($0.bandID == bandID || $0.url.host == site.host) }
         }
+        artists = Self.inOrder(artists)
     }
 
     /// Checks the site on Bandcamp, then adds it. Throws when it has no playable releases.
@@ -133,7 +142,7 @@ final class ArtistStore: ObservableObject {
     }
 
     /// Accepts "name.bandcamp.com", a full URL, or any page of the site, and keeps only its root.
-    static func siteURL(from input: String) -> URL? {
+    nonisolated static func siteURL(from input: String) -> URL? {
         var text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         if !text.contains("://") { text = "https://" + text }
         guard let parsed = URL(string: text), let host = parsed.host?.lowercased(),

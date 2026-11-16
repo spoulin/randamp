@@ -26,6 +26,11 @@ struct ArtistsView: View {
     @State private var error: String?
     @State private var confirmUnlink = false
     @State private var showAdd = false
+    @State private var query = ""
+    @State private var found: [FoundArtist] = []
+    @State private var searching = false
+    @State private var searchError: String?
+    @State private var adding: Int?
     @AppStorage("panelTab") private var tab = Tab.artists
     private var section: PanelSection { player.newReleases ? .newReleases : .library }
     @ObservedObject var newReleases = NewReleaseStore.shared
@@ -309,6 +314,168 @@ struct ArtistsView: View {
     }
 
     @ViewBuilder private var artistsTab: some View {
+        VStack(spacing: 6) {
+            searchField
+            if isSearching { searchResults } else { artistsList }
+        }
+        .task(id: query) { await search() }
+        .confirmationDialog("Unlink bandcamp.com/\(store.profile ?? "")?", isPresented: $confirmUnlink) {
+            Button("Unlink and remove \(followedCount) artists", role: .destructive) { store.unlink() }
+        } message: {
+            Text("Artists added by hand stay. You can link the profile again later, but on and off choices are lost.")
+        }
+    }
+
+    // MARK: Search
+
+    private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var isSearching: Bool { !trimmedQuery.isEmpty }
+
+    private var searchField: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField("Search your artists and Bandcamp", text: $query)
+                .textFieldStyle(.plain)
+                .onExitCommand { query = "" }
+            if searching {
+                ProgressView().controlSize(.mini)
+            }
+            if !query.isEmpty {
+                Button { query = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.borderless)
+                .help("Clear the search")
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 7))
+    }
+
+    /// Your artists whose name or address has the words typed, accents and case aside.
+    private func matches(_ artist: Artist) -> Bool {
+        let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive]
+        return artist.name.range(of: trimmedQuery, options: options) != nil
+            || (artist.url.host ?? "").range(of: trimmedQuery, options: options) != nil
+    }
+
+    /// Bandcamp's results that aren't in your list yet.
+    private var foundElsewhere: [FoundArtist] {
+        let hosts = Set(store.artists.compactMap(\.url.host))
+        return found.filter { !hosts.contains($0.site.host ?? "") }
+    }
+
+    /// Asks Bandcamp once you stop typing for a moment, from two letters on.
+    private func search() async {
+        let text = trimmedQuery
+        guard text.count >= 2 else {
+            found = []
+            searchError = nil
+            return
+        }
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        guard !Task.isCancelled else { return }
+        searching = true
+        defer { searching = false }
+        do {
+            let results = try await ArtistSearch.search(text)
+            guard !Task.isCancelled else { return }
+            found = results
+            searchError = nil
+        } catch {
+            guard !Task.isCancelled else { return }
+            found = []
+            searchError = "Bandcamp's search isn't answering. Try again in a little while."
+        }
+    }
+
+    @ViewBuilder private var searchResults: some View {
+        let mine = store.artists.filter(matches)
+        let others = foundElsewhere
+        List {
+            Section {
+                if mine.isEmpty {
+                    Text("None of your artists has this name.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                ForEach($store.artists) { $artist in
+                    if matches(artist) {
+                        row($artist, removable: !artist.isFollowed)
+                    }
+                }
+            } header: {
+                HStack {
+                    Text("Your artists (\(mine.count))")
+                    Spacer()
+                    artistsToolbar
+                }
+            }
+            Section("On Bandcamp") {
+                if let searchError {
+                    Text(searchError).font(.caption).foregroundStyle(.red)
+                } else if trimmedQuery.count < 2 {
+                    Text("Type at least two letters.").font(.caption).foregroundStyle(.secondary)
+                } else if others.isEmpty && !searching {
+                    Text(found.isEmpty ? "No artist or label by this name on Bandcamp." : "All the results are already in your list.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                ForEach(others) { foundRow($0) }
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .scrollIndicators(.never)
+        .frame(minHeight: 160)
+    }
+
+    private func foundRow(_ artist: FoundArtist) -> some View {
+        HStack {
+            Button {
+                Player.shared.playArtist(artist.asArtist)
+            } label: {
+                Image(systemName: "play.circle")
+            }
+            .buttonStyle(.borderless)
+            .help("Listen to a random album by \(artist.name) (turns radio off)")
+            CoverThumbnail(url: artist.imageURL)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(artist.name)
+                Text(artist.details.isEmpty ? (artist.site.host ?? "") : artist.details)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            .lineLimit(1)
+            .help(artist.site.host ?? "")
+            Spacer()
+            FollowButton(site: artist.site, name: artist.name, bandID: artist.id)
+            if adding == artist.id {
+                ProgressView().controlSize(.small)
+            } else {
+                Button { add(artist) } label: {
+                    Image(systemName: "plus.circle")
+                }
+                .buttonStyle(.borderless)
+                .disabled(adding != nil)
+                .help("Add \(artist.name) to your artists, without following on Bandcamp")
+            }
+        }
+    }
+
+    private func add(_ artist: FoundArtist) {
+        adding = artist.id
+        Task {
+            defer { adding = nil }
+            do {
+                try await store.add(artist.site.absoluteString)
+                Toast.shared.show("Added \(artist.name) to your artists", symbol: "plus.circle")
+            } catch let failure as ArtistStore.AddError {
+                Toast.shared.show(failure.errorDescription ?? "Couldn't add \(artist.name)", symbol: "exclamationmark.triangle")
+            } catch {
+                Toast.shared.show("\(artist.name) has no albums to play", symbol: "exclamationmark.triangle")
+            }
+        }
+    }
+
+    @ViewBuilder private var artistsList: some View {
         List {
             if store.artists.isEmpty && store.profile == nil {
                 HStack(alignment: .top) {
@@ -361,12 +528,6 @@ struct ArtistsView: View {
         .scrollContentBackground(.hidden)
         .scrollIndicators(.never)
         .frame(minHeight: 160)
-        .confirmationDialog("Unlink bandcamp.com/\(store.profile ?? "")?", isPresented: $confirmUnlink) {
-            Button("Unlink and remove \(followedCount) artists", role: .destructive) { store.unlink() }
-        } message: {
-            Text("Artists added by hand stay. You can link the profile again later, but on and off choices are lost.")
-        }
-
     }
 
     private func followingHeader(_ profile: String) -> some View {

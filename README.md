@@ -124,6 +124,13 @@ To add an artist or a label, click **+** at the top right of the list, paste the
 their Bandcamp site, for example `artist.bandcamp.com` or any page of their site, then click
 **Add**. Turn an artist off with its switch to skip them without removing them.
 
+Or find them by name: type in the search field at the top of the list. **Your artists** shows
+the ones in your list whose name matches, followed or added by hand. **On Bandcamp** shows the
+artists and labels Bandcamp's search finds that aren't in your list yet, with their town and
+genre. For each one, the play button plays a random album, **Follow** follows them on Bandcamp
+(signed in), and **+** adds them to your list without following them. Press Escape or click the
+cross to clear the search.
+
 Click the play button next to an artist to hear a random album by that artist right away. This
 turns radio mode off, so the album plays to the end, followed by other albums by that artist.
 
@@ -138,7 +145,8 @@ Without signing in: click **+** and paste your Bandcamp profile, for example
 Either way, the artists and labels it follows appear under **Following on Bandcamp**.
 
 The list updates at each launch, or when you choose **Refresh** in the **…** menu at the top
-right: artists you follow on Bandcamp are added, and artists you unfollow are removed. Turning
+right: artists you follow on Bandcamp are added, in alphabetical order with the others, and
+artists you unfollow are removed. Turning
 one off here stays as you set it. **Unlink**, in the same menu, removes these artists; artists
 added by hand stay. The menu also turns all of them on or off at once.
 
