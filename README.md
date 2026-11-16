@@ -31,7 +31,8 @@ RandAmp was called Dérive until version 1.0.
 - A player window that stays open, with a large cover, to keep on your desktop
 - Play/pause, next track, and the dice for another random album
 - Open the current album on Bandcamp
-- The artist playing: photo, bio, upcoming shows and what fans wrote about the album
+- The artist playing: photo, bio, upcoming shows, all their releases to play, and what fans wrote
+  about the album
 - The merch of the artist playing
 - The artist's community page: new releases to play, listening parties, recent supporters
 - Shuffle in a fan's collection, from a supporter or a fan comment, and back to yours in a click
@@ -246,6 +247,11 @@ The **(i)** tab shows who plays the album playing, read from its Bandcamp page:
 - upcoming shows, with the venue and the city, and the ticket price when Songkick has it, with
   **Few left** or **Sold out**; click one to open its page. Prices are read only for the shows
   on screen;
+- **Releases**: the covers of everything on the artist's site, usually the newest first, the
+  first 12 until you click **Show all**. The album playing has a blue border. Click a cover to
+  play that release from its first track. Radio mode turns off, so it plays to the end; in a
+  fan's collection, the Fans mix or New Releases, the next album then comes from there again, as
+  for a release played from Community. Right-click a cover to open it on Bandcamp;
 - the album: release date, tags, text and credits, and the comments fans left on it, with their
   favorite track.
 

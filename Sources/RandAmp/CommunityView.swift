@@ -289,7 +289,7 @@ private struct SupporterAvatar: View {
 }
 
 /// On hover only, a slight dim and a play glyph: a click plays the release.
-private struct PlayGlyphOnHover: ViewModifier {
+struct PlayGlyphOnHover: ViewModifier {
     @State private var hovering = false
 
     func body(content: Content) -> some View {
@@ -312,6 +312,6 @@ private struct PlayGlyphOnHover: ViewModifier {
     }
 }
 
-private extension View {
+extension View {
     func playGlyphOnHover() -> some View { modifier(PlayGlyphOnHover()) }
 }

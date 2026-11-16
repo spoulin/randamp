@@ -6,6 +6,7 @@ import SwiftUI
 struct ArtistInfoView: View {
     @ObservedObject private var player = Player.shared
     @ObservedObject private var store = ArtistInfoStore.shared
+    @ObservedObject private var discography = DiscographyStore.shared
 
     var body: some View {
         if let page = player.pageURL {
@@ -34,6 +35,7 @@ struct ArtistInfoView: View {
                 if !info.bio.isEmpty { ExpandableText(text: info.bio, lines: 6) }
                 if !info.links.isEmpty { links(info.links) }
                 if !info.shows.isEmpty { shows(info.shows) }
+                releases(info, page: page)
                 release(info, page: page)
             }
             .padding(.vertical, 4)
@@ -112,6 +114,32 @@ struct ArtistInfoView: View {
                 .help(show.url == nil ? "" : "Open the show's page")
             }
         }
+    }
+
+    /// Everything on the site of the release playing, as a grid of covers. A click plays one
+    /// from its first track; the source you listen to doesn't change.
+    @ViewBuilder private func releases(_ info: ArtistInfo, page: URL) -> some View {
+        let site = ArtistStore.siteURL(from: page.absoluteString) ?? page
+        VStack(alignment: .leading, spacing: 8) {
+            switch discography.state(for: site) {
+            case .loaded(let list)?:
+                if !list.isEmpty {
+                    sectionTitle("Releases (\(list.count))")
+                    ReleaseGrid(releases: list, playing: page) { release in
+                        Player.shared.playAlbum(at: release.url,
+                                                by: player.currentArtist ?? Artist(url: site, name: info.name))
+                    }
+                }
+            case .failed?:
+                sectionTitle("Releases")
+                Text("Couldn't load the list of releases from Bandcamp.")
+                    .font(.caption).foregroundStyle(.secondary)
+            default:
+                sectionTitle("Releases")
+                ProgressView().controlSize(.small)
+            }
+        }
+        .task(id: site) { await discography.load(site) }
     }
 
     @ViewBuilder private func release(_ info: ArtistInfo, page: URL) -> some View {
@@ -242,6 +270,77 @@ private struct ExpandableText: View {
             }
         }
         .onChange(of: text) { _ in expanded = false }
+    }
+}
+
+/// Covers in rows, the first 12 only until you ask for all of them. The release playing is marked.
+private struct ReleaseGrid: View {
+    let releases: [Release]
+    let playing: URL
+    let play: (Release) -> Void
+    @State private var expanded = false
+    private static let visible = 12
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 92, maximum: 140), spacing: 10, alignment: .top)],
+                      alignment: .leading, spacing: 12) {
+                ForEach(expanded ? releases : Array(releases.prefix(Self.visible))) { cell($0) }
+            }
+            if releases.count > Self.visible {
+                Button(expanded ? "Show fewer" : "Show all \(releases.count)") { expanded.toggle() }
+                    .buttonStyle(.link)
+                    .font(.caption)
+            }
+        }
+    }
+
+    private func cell(_ release: Release) -> some View {
+        let current = release.isSame(as: playing)
+        return Button { play(release) } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Color.clear
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay {
+                        AsyncImage(url: release.artURL) { image in
+                            image.resizable().scaledToFill()
+                        } placeholder: {
+                            Rectangle().fill(.quaternary)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .overlay {
+                        if current {
+                            RoundedRectangle(cornerRadius: 5).strokeBorder(Color.accentColor, lineWidth: 2)
+                        }
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        if current {
+                            Image(systemName: "speaker.wave.2.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.white)
+                                .padding(5)
+                                .background(Color.accentColor, in: Circle())
+                                .padding(5)
+                        }
+                    }
+                    .playGlyphOnHover()
+                Text(release.title)
+                    .font(.caption.weight(current ? .semibold : .regular))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                if let artist = release.artist {
+                    Text(artist).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(current ? "\(release.title) is playing" : "Play \(release.title) from the first track")
+        .contextMenu {
+            Button("Play from the First Track") { play(release) }
+            Button("Open on Bandcamp") { NSWorkspace.shared.open(release.url) }
+        }
     }
 }
 
